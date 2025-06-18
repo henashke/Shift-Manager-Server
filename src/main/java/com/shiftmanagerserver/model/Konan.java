@@ -1,4 +1,4 @@
-package main.java.com.shiftmanagerserver.model;
+package com.shiftmanagerserver.model;
 
 import java.util.UUID;
 

@@ -1,4 +1,4 @@
-package main.java.com.shiftmanagerserver;
+package com.shiftmanagerserver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,8 +9,8 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
-import main.java.com.shiftmanagerserver.model.Konan;
-import main.java.com.shiftmanagerserver.service.KonanService;
+import com.shiftmanagerserver.model.Konan;
+import com.shiftmanagerserver.service.KonanService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

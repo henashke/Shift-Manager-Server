@@ -1,4 +1,4 @@
-package main.java.com.shiftmanagerserver;
+package com.shiftmanagerserver;
 
 import io.vertx.core.Vertx;
 

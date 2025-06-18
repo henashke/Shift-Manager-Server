@@ -1,10 +1,10 @@
-package main.java.com.shiftmanagerserver.service;
+package com.shiftmanagerserver.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import main.java.com.shiftmanagerserver.model.Konan;
+import com.shiftmanagerserver.model.Konan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
