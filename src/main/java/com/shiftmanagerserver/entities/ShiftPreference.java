@@ -4,9 +4,24 @@ import java.util.UUID;
 
 public class ShiftPreference {
 
-    private UUID uuid;
+    public Shift shift() {
+        return shift;
+    }
+
+    private final Shift shift;
+
+    private final String preference;
+
+    public ShiftPreference(Shift shift, String preference) {
+        this.shift = shift;
+        this.preference = preference;
+    }
+
+    public String preference() {
+        return preference;
+    }
 
     public UUID uuid() {
-        return uuid;
+        return shift.uuid();
     }
 }

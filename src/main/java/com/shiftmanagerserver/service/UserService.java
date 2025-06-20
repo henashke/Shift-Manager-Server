@@ -1,34 +1,32 @@
 package com.shiftmanagerserver.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
+import com.shiftmanagerserver.dao.UserDao;
 import com.shiftmanagerserver.model.User;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class UserService {
-    private  final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private static final String DATA_FILE = "users.json";
-    private final ObjectMapper objectMapper;
+    private final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private final UserDao dao;
+    private Set<User> users;
 
-    public List<User> users() {
-        return users;
+
+    @Inject
+    public UserService(UserDao dao) {
+        this.dao = dao;
+        this.users = dao.read();
     }
 
-    private List<User> users;
-
-    public UserService() {
-        this.objectMapper = new ObjectMapper();
-        this.users = new ArrayList<>();
-        loadUsers();
+    public Set<User> users() {
+        return users;
     }
 
     public Future<List<User>> getAllUsers() {
@@ -48,7 +46,7 @@ public class UserService {
     public Future<User> createUser(User user) {
         logger.debug("Creating new user: {}", user);
         users.add(user);
-        saveUsers();
+        dao.write(users);
         return Future.succeededFuture(user);
     }
 
@@ -62,7 +60,7 @@ public class UserService {
                     if (updates.containsKey("score")) {
                         user.setScore(updates.getInteger("score"));
                     }
-                    saveUsers();
+                    dao.write(users);// todo needed to converte to future and fail the main future if failed
                     return user;
                 });
     }
@@ -71,35 +69,9 @@ public class UserService {
         logger.debug("Deleting user with id: {}", id);
         boolean removed = users.removeIf(user -> user.getId().equals(id));
         if (removed) {
-            saveUsers();
+            dao.write(users);
             return Future.succeededFuture();
         }
         return Future.failedFuture("User not found");
-    }
-
-    private void loadUsers() {
-        try {
-            File file = new File(DATA_FILE);
-            if (file.exists()) {
-                users = objectMapper.readValue(file, new TypeReference<List<User>>() {
-                });
-                logger.info("Loaded {} users from file", users.size());
-            } else {
-                users = new ArrayList<>();
-                logger.info("No existing users file found, starting with empty list");
-            }
-        } catch (IOException e) {
-            logger.error("Error loading users from file", e);
-            users = new ArrayList<>();
-        }
-    }
-
-    private void saveUsers() {
-        try {
-            objectMapper.writeValue(new File(DATA_FILE), users);
-            logger.debug("Saved {} users to file", users.size());
-        } catch (IOException e) {
-            logger.error("Error saving users to file", e);
-        }
     }
 }

@@ -3,6 +3,7 @@ package com.shiftmanagerserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.shiftmanagerserver.model.User;
 import com.shiftmanagerserver.service.UserService;
 import io.vertx.core.AbstractVerticle;
@@ -16,24 +17,19 @@ import org.slf4j.LoggerFactory;
 public class MainVerticle extends AbstractVerticle {
     private final Logger logger;
     private final UserService userService;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper mapper;
     private final Router router;
+    private final Integer port;
 
     @Inject
-    public MainVerticle(Router router) {
+    public MainVerticle(@Named("application.port") Integer port, Router router,
+                        ObjectMapper mapper, UserService userService) {
+        this.port = port;
         this.logger = LoggerFactory.getLogger(MainVerticle.class);
-        this.objectMapper = new ObjectMapper();
-        this.userService = new UserService();
+        this.mapper = mapper;
+        this.userService = userService;
         this.router = router;
         bindRoutes();
-    }
-
-    private void bindRoutes() {
-        router.get("/users").handler(this::getAllUsers);
-        router.get("/users/:id").handler(this::getUserById);
-        router.post("/adduser").handler(this::createUser);
-        router.put("/updateUser/:id").handler(this::updateUser);
-        router.delete("/removeUser/:id").handler(this::deleteUser);
     }
 
     @Override
@@ -41,7 +37,7 @@ public class MainVerticle extends AbstractVerticle {
         logger.info("Starting Shift-Manager application...");
         vertx.createHttpServer()
                 .requestHandler(router)
-                .listen(8080, http -> {
+                .listen(port, http -> {
                     if (http.succeeded()) {
                         startPromise.complete();
                         logger.info("HTTP server started on port 8080");
@@ -52,12 +48,20 @@ public class MainVerticle extends AbstractVerticle {
                 });
     }
 
+    private void bindRoutes() {
+        router.get("/users").handler(this::getAllUsers);
+        router.get("/users/:id").handler(this::getUserById);
+        router.post("/adduser").handler(this::createUser);
+        router.put("/updateUser/:id").handler(this::updateUser);
+        router.delete("/removeUser/:id").handler(this::deleteUser);
+    }
+
     private void getAllUsers(RoutingContext ctx) {
         logger.info("Received request to get all userim");
         userService.getAllUsers()
                 .onSuccess(userim -> {
                     try {
-                        String json = objectMapper.writeValueAsString(userim);
+                        String json = mapper.writeValueAsString(userim);
                         logger.info("Successfully retrieved {} userim", userim.size());
                         createHttpResponse(ctx, json, 200);
                     } catch (JsonProcessingException e) {
@@ -77,7 +81,7 @@ public class MainVerticle extends AbstractVerticle {
         userService.getUserById(id)
                 .onSuccess(user -> {
                     try {
-                        String json = objectMapper.writeValueAsString(user);
+                        String json = mapper.writeValueAsString(user);
                         logger.info("Successfully retrieved user with id: {}", id);
                         createHttpResponse(ctx, json, 200);
                     } catch (JsonProcessingException e) {
@@ -95,11 +99,11 @@ public class MainVerticle extends AbstractVerticle {
         try {
             String body = ctx.body().asString();
             logger.info("Received request to create user: {}", body);
-            User user = objectMapper.readValue(body, User.class);
+            User user = mapper.readValue(body, User.class);
             userService.createUser(user)
                     .onSuccess(createdUser -> {
                         try {
-                            String json = objectMapper.writeValueAsString(createdUser);
+                            String json = mapper.writeValueAsString(createdUser);
                             logger.info("Successfully created user with id: {}", createdUser.getId());
                             createHttpResponse(ctx, json, 201);
                         } catch (JsonProcessingException e) {
@@ -124,7 +128,7 @@ public class MainVerticle extends AbstractVerticle {
         userService.updateUser(id, body)
                 .onSuccess(updatedUser -> {
                     try {
-                        String json = objectMapper.writeValueAsString(updatedUser);
+                        String json = mapper.writeValueAsString(updatedUser);
                         logger.info("Successfully updated user with id: {}", id);
                         createHttpResponse(ctx, json, 200);
                     } catch (JsonProcessingException e) {
