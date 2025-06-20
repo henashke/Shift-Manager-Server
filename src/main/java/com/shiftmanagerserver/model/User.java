@@ -1,17 +1,31 @@
 package com.shiftmanagerserver.model;
 
+import com.shiftmanagerserver.entities.ShiftPreference;
+
+import java.util.Set;
 import java.util.UUID;
 
-public class Konan {
+public class User {
+    public String id() {
+        return id;
+    }
+
     private String id;
     private String name;
     private int score;
 
-    public Konan() {
+    public Set<ShiftPreference> preferences() {
+        return preferences;
+    }
+
+    private Set<ShiftPreference> preferences;
+
+
+    public User() {
         this.id = UUID.randomUUID().toString();
     }
 
-    public Konan(String name, int score) {
+    public User(String name, int score) {
         this();
         this.name = name;
         this.score = score;
