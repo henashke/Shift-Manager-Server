@@ -58,7 +58,7 @@ public class MainVerticle extends AbstractVerticle {
 
     private void getAllUsers(RoutingContext ctx) {
         logger.info("Received request to get all userim");
-        userService.getAllUsers()
+        userService.users()
                 .onSuccess(userim -> {
                     try {
                         String json = mapper.writeValueAsString(userim);

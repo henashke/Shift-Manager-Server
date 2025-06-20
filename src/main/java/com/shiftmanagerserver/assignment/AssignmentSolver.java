@@ -54,7 +54,7 @@ public class AssignmentSolver {
     }
 
     public AssignmentRequestDTO buiildAssignmentRequestDTO(Set<Shift> shifts) {
-        return new AssignmentRequestDTO(userService.users().stream()
+        return new AssignmentRequestDTO(userService.users().result().stream()
                 .map(ConverterUtils::convert)
                 .collect(Collectors.toSet()),
                 shifts.stream()

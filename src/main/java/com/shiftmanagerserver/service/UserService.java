@@ -8,12 +8,9 @@ import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
-public class UserService {
+public class UserService implements IUserService<User,String> {
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final UserDao dao;
     private final Set<User> users;
@@ -24,15 +21,14 @@ public class UserService {
         this.users = dao.read();
     }
 
-    public Set<User> users() {
-        return users;
-    }
-
-    public Future<List<User>> getAllUsers() {
+    @Override
+    public Future<Set<User>> users() {
         logger.debug("Getting all users");
-        return Future.succeededFuture(new ArrayList<>(users));
+        return Future.succeededFuture(new HashSet<>(users));
     }
 
+
+    @Override
     public Future<User> getUserById(String id) {
         logger.debug("Getting user with id: {}", id);
         Optional<User> user = users.stream()
@@ -42,6 +38,7 @@ public class UserService {
                 .orElseGet(() -> Future.failedFuture("User not found"));
     }
 
+    @Override
     public Future<User> createUser(User user) {
         logger.debug("Creating new user: {}", user);
         users.add(user);
@@ -49,6 +46,7 @@ public class UserService {
         return Future.succeededFuture(user);
     }
 
+    @Override
     public Future<User> updateUser(String id, JsonObject updates) {
         logger.debug("Updating user with id: {} and updates: {}", id, updates);
         return getUserById(id)
@@ -64,6 +62,7 @@ public class UserService {
                 });
     }
 
+    @Override
     public Future<Void> deleteUser(String id) {
         logger.debug("Deleting user with id: {}", id);
         boolean removed = users.removeIf(user -> user.getId().equals(id));
