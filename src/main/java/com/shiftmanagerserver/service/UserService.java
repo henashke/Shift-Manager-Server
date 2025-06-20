@@ -16,8 +16,7 @@ import java.util.Set;
 public class UserService {
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final UserDao dao;
-    private Set<User> users;
-
+    private final Set<User> users;
 
     @Inject
     public UserService(UserDao dao) {
@@ -60,7 +59,7 @@ public class UserService {
                     if (updates.containsKey("score")) {
                         user.setScore(updates.getInteger("score"));
                     }
-                    dao.write(users);// todo needed to converte to future and fail the main future if failed
+                    dao.write(users);
                     return user;
                 });
     }
