@@ -17,7 +17,6 @@ public class Konan {
         this.score = score;
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }

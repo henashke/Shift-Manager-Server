@@ -3,6 +3,7 @@ package com.shiftmanagerserver.model;
 public class User {
     private String username;
     private String password;
+    private String konanId;
 
     public User() {
     }
@@ -26,5 +27,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getKonanId() {
+        return konanId;
+    }
+
+    public void setKonanId(String konanId) {
+        this.konanId = konanId;
     }
 }

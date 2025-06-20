@@ -21,7 +21,7 @@ public class MainVerticle extends AbstractVerticle {
 
     public MainVerticle() {
         this.konanService = new KonanService();
-        this.userService = new UserService();
+        this.userService = new UserService(konanService);
         this.konanHandler = new KonanHandler(konanService);
         this.authHandler = new AuthHandler(userService);
     }
@@ -31,7 +31,6 @@ public class MainVerticle extends AbstractVerticle {
         logger.info("Starting Shift-Manager application...");
         Router router = Router.router(vertx);
 
-        // Enable CORS
         router.route().handler(CorsHandler.create("*")
                 .allowedMethod(io.vertx.core.http.HttpMethod.GET)
                 .allowedMethod(io.vertx.core.http.HttpMethod.POST)
@@ -39,21 +38,17 @@ public class MainVerticle extends AbstractVerticle {
                 .allowedMethod(io.vertx.core.http.HttpMethod.DELETE)
                 .allowedHeader("Content-Type"));
 
-        // Parse request body
         router.route().handler(BodyHandler.create());
 
-        // Auth routes
         router.post("/auth/signup").handler(authHandler::handleSignup);
         router.post("/auth/login").handler(authHandler::handleLogin);
 
-        // Konan routes
         router.get("/konanim").handler(konanHandler::getAllKonanim);
         router.get("/konanim/:id").handler(konanHandler::getKonanById);
         router.post("/konanim").handler(konanHandler::createKonan);
         router.put("/konanim/:id").handler(konanHandler::updateKonan);
         router.delete("/konanim/:id").handler(konanHandler::deleteKonan);
 
-        // Create HTTP server
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(8080, http -> {

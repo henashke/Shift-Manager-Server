@@ -2,6 +2,7 @@ package com.shiftmanagerserver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import com.shiftmanagerserver.model.Konan;
 import com.shiftmanagerserver.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
@@ -17,10 +18,12 @@ public class UserService {
     private static final String USERS_FILE = "users.json";
     private final ObjectMapper objectMapper;
     private final List<User> users;
+    private final KonanService konanService;
 
-    public UserService() {
+    public UserService(KonanService konanService) {
         this.objectMapper = new ObjectMapper();
         this.users = loadUsers();
+        this.konanService = konanService;
     }
 
     private List<User> loadUsers() {
@@ -56,6 +59,11 @@ public class UserService {
         if (userExists(user.getUsername())) {
             return false;
         }
+
+        Konan konan = new Konan(user.getUsername(), konanService.getAverageKonanScore());
+        konanService.createKonan(konan);
+
+        user.setKonanId(konan.getId());
 
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashedPassword);

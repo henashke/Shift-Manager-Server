@@ -2,9 +2,9 @@ package com.shiftmanagerserver.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shiftmanagerserver.model.Konan;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import com.shiftmanagerserver.model.Konan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +70,7 @@ public class KonanService {
         logger.debug("Creating new konan: {}", konan);
         konans.add(konan);
         saveKonans();
+        logger.info("Created new Konan with ID: {} for user: {}", konan.getId(), konan.getName());
         return Future.succeededFuture(konan);
     }
 
@@ -96,5 +97,15 @@ public class KonanService {
             return Future.succeededFuture();
         }
         return Future.failedFuture("Konan not found");
+    }
+
+    public int getAverageKonanScore() {
+        if (konans.isEmpty()) {
+            return 0;
+        }
+        return (int) Math.round(konans.stream()
+                .mapToInt(Konan::getScore)
+                .average()
+                .orElse(0));
     }
 }
