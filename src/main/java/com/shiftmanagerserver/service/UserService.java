@@ -20,10 +20,37 @@ public class UserService {
     private final List<User> users;
     private final KonanService konanService;
 
+
     public UserService() {
         this.objectMapper = new ObjectMapper();
         this.users = loadUsers();
         this.konanService = new KonanService();
+    }
+
+    public List<User> users() {
+        return users;
+    }
+
+    public boolean createUser(User user) {
+        if (userExists(user.getName())) {
+            return false;
+        }
+        Konan konan = new Konan(user.getId(), konanService.getAverageKonanScore());
+        konanService.createKonan(konan);
+        user.setKonanId(konan.getId());
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        user.setPassword(hashedPassword);
+        users.add(user);
+        saveUsers();
+        return true;
+    }
+
+    public boolean authenticateUser(String username, String password) {
+        return users.stream()
+                .filter(u -> u.getName().equals(username))
+                .findFirst()
+                .map(user -> BCrypt.checkpw(password, user.getPassword()))
+                .orElse(false);
     }
 
     private List<User> loadUsers() {
@@ -32,7 +59,6 @@ public class UserService {
             logger.info("Users file not found, creating new user list");
             return new ArrayList<>();
         }
-
         try {
             CollectionType listType = objectMapper.getTypeFactory()
                     .constructCollectionType(ArrayList.class, User.class);
@@ -55,33 +81,8 @@ public class UserService {
         }
     }
 
-    public boolean createUser(User user) {
-        if (userExists(user.getName())) {
-            return false;
-        }
-
-        Konan konan = new Konan(user.getId(), konanService.getAverageKonanScore());
-        konanService.createKonan(konan);
-
-        user.setKonanId(konan.getId());
-
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-        user.setPassword(hashedPassword);
-        users.add(user);
-        saveUsers();
-        return true;
-    }
-
     private boolean userExists(String username) {
         return users.stream()
                 .anyMatch(u -> u.getName().equals(username));
-    }
-
-    public boolean authenticateUser(String username, String password) {
-        return users.stream()
-                .filter(u -> u.getName().equals(username))
-                .findFirst()
-                .map(user -> BCrypt.checkpw(password, user.getPassword()))
-                .orElse(false);
     }
 }
