@@ -5,6 +5,9 @@ public class Constraint {
     private ConstraintType constraintType;
     private String konanId;
 
+    public Constraint() {
+    }
+
     public Constraint(String konanId, Shift shift) {
         this.konanId = konanId;
         this.shift = shift;

@@ -20,8 +20,8 @@ public class ConstraintHandler {
     private final ConstraintService constraintService;
     private final ObjectMapper objectMapper;
 
-    public ConstraintHandler(ConstraintService constraintService) {
-        this.constraintService = constraintService;
+    public ConstraintHandler() {
+        this.constraintService = new ConstraintService();
         this.objectMapper = new ObjectMapper();
     }
 
