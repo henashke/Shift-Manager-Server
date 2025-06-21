@@ -1,25 +1,13 @@
-package com.shiftmanagerserver.model;
-
-import com.shiftmanagerserver.entities.ShiftPreference;
+package com.shiftmanagerserver.entities;
 
 import java.util.Set;
 import java.util.UUID;
 
 public class User {
-    public String id() {
-        return id;
-    }
-
     private String id;
     private String name;
     private int score;
-
-    public Set<ShiftPreference> preferences() {
-        return preferences;
-    }
-
     private Set<ShiftPreference> preferences;
-
 
     public User() {
         this.id = UUID.randomUUID().toString();
@@ -29,6 +17,22 @@ public class User {
         this();
         this.name = name;
         this.score = score;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public int score() {
+        return score;
+    }
+
+    public String id() {
+        return id;
+    }
+
+    public Set<ShiftPreference> preferences() {
+        return preferences;
     }
 
     // Getters and Setters

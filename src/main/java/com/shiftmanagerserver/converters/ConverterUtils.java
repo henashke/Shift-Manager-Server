@@ -6,7 +6,7 @@ import com.shiftmanagerserver.dto.ShiftPreferenceDTO;
 import com.shiftmanagerserver.dto.UserDTO;
 import com.shiftmanagerserver.entities.Shift;
 import com.shiftmanagerserver.entities.ShiftPreference;
-import com.shiftmanagerserver.model.User;
+import com.shiftmanagerserver.entities.User;
 
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -48,8 +48,7 @@ public class ConverterUtils {
             case "CANNOT" -> Preference.CANNOT;
             case "PREFER_NOT" -> Preference.PREFER_NOT;
             case "PREFER" -> Preference.PREFER;
-            case "MUST" -> Preference.MUST;
-            default -> Preference.NO_PREFERENCE;
+            default -> throw new IllegalStateException("Unexpected value: " + preference);
         };
     }
 

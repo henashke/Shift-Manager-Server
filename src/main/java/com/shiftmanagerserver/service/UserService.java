@@ -2,7 +2,8 @@ package com.shiftmanagerserver.service;
 
 import com.google.inject.Inject;
 import com.shiftmanagerserver.dao.UserDao;
-import com.shiftmanagerserver.model.User;
+import com.shiftmanagerserver.entities.ShiftPreference;
+import com.shiftmanagerserver.entities.User;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -27,6 +28,10 @@ public class UserService implements IUserService<User,String> {
         return Future.succeededFuture(new HashSet<>(users));
     }
 
+    @Override
+    public Future<String> updatePreferences(UUID id, Set<ShiftPreference> preferences) {
+        return null;
+    }
 
     @Override
     public Future<User> getUserById(String id) {
