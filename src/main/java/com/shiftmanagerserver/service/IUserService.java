@@ -1,6 +1,6 @@
 package com.shiftmanagerserver.service;
 
-import com.shiftmanagerserver.entities.ShiftPreference;
+import com.shiftmanagerserver.entities.Constraint;
 import com.shiftmanagerserver.entities.User;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
@@ -8,7 +8,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.Set;
 import java.util.UUID;
 
-public interface IUserService<T,S> {
+public interface IUserService<T, S> {
 
     /**
      * Retrieves a user by their ID.
@@ -50,5 +50,5 @@ public interface IUserService<T,S> {
      */
     Future<Set<T>> users();
 
-    Future<S> updatePreferences(UUID id, Set<ShiftPreference> preferences);
+    Future<S> updatePreferences(UUID id, Set<Constraint> preferences);
 }

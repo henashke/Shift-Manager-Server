@@ -1,80 +1,87 @@
 package com.shiftmanagerserver.service;
 
-import com.google.inject.Inject;
-import com.shiftmanagerserver.dao.UserDao;
-import com.shiftmanagerserver.entities.ShiftPreference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.shiftmanagerserver.entities.Konan;
 import com.shiftmanagerserver.entities.User;
-import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
+import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UserService implements IUserService<User,String> {
-    private final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private final UserDao dao;
-    private final Set<User> users;
+public class UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final String USERS_FILE = "users.json";
+    private final ObjectMapper objectMapper;
+    private final List<User> users;
+    private final KonanService konanService;
 
-    @Inject
-    public UserService(UserDao dao) {
-        this.dao = dao;
-        this.users = dao.read();
+    public UserService() {
+        this.objectMapper = new ObjectMapper();
+        this.users = loadUsers();
+        this.konanService = new KonanService();
     }
 
-    @Override
-    public Future<Set<User>> users() {
-        logger.debug("Getting all users");
-        return Future.succeededFuture(new HashSet<>(users));
-    }
-
-    @Override
-    public Future<String> updatePreferences(UUID id, Set<ShiftPreference> preferences) {
-        return null;
-    }
-
-    @Override
-    public Future<User> getUserById(String id) {
-        logger.debug("Getting user with id: {}", id);
-        Optional<User> user = users.stream()
-                .filter(t -> t.getId().equals(id))
-                .findFirst();
-        return user.map(Future::succeededFuture)
-                .orElseGet(() -> Future.failedFuture("User not found"));
-    }
-
-    @Override
-    public Future<User> createUser(User user) {
-        logger.debug("Creating new user: {}", user);
-        users.add(user);
-        dao.write(users);
-        return Future.succeededFuture(user);
-    }
-
-    @Override
-    public Future<User> updateUser(String id, JsonObject updates) {
-        logger.debug("Updating user with id: {} and updates: {}", id, updates);
-        return getUserById(id)
-                .map(user -> {
-                    if (updates.containsKey("name")) {
-                        user.setName(updates.getString("name"));
-                    }
-                    if (updates.containsKey("score")) {
-                        user.setScore(updates.getInteger("score"));
-                    }
-                    dao.write(users);
-                    return user;
-                });
-    }
-
-    @Override
-    public Future<Void> deleteUser(String id) {
-        logger.debug("Deleting user with id: {}", id);
-        boolean removed = users.removeIf(user -> user.getId().equals(id));
-        if (removed) {
-            dao.write(users);
-            return Future.succeededFuture();
+    private List<User> loadUsers() {
+        File file = new File(USERS_FILE);
+        if (!file.exists()) {
+            logger.info("Users file not found, creating new user list");
+            return new ArrayList<>();
         }
-        return Future.failedFuture("User not found");
+
+        try {
+            CollectionType listType = objectMapper.getTypeFactory()
+                    .constructCollectionType(ArrayList.class, User.class);
+            List<User> loadedUsers = objectMapper.readValue(file, listType);
+            logger.info("Successfully loaded {} users from file", loadedUsers.size());
+            return loadedUsers;
+        } catch (IOException e) {
+            logger.error("Error loading users from file", e);
+            return new ArrayList<>();
+        }
+    }
+
+    private void saveUsers() {
+        try {
+            objectMapper.writeValue(new File(USERS_FILE), users);
+            logger.info("Successfully saved {} users to file", users.size());
+        } catch (IOException e) {
+            logger.error("Error saving users to file", e);
+            throw new RuntimeException("Failed to save users", e);
+        }
+    }
+
+    public boolean createUser(User user) {
+        if (userExists(user.getName())) {
+            return false;
+        }
+
+        Konan konan = new Konan(user.getId(), konanService.getAverageKonanScore());
+        konanService.createKonan(konan);
+
+        user.setKonanId(konan.getId());
+
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        user.setPassword(hashedPassword);
+        users.add(user);
+        saveUsers();
+        return true;
+    }
+
+    private boolean userExists(String username) {
+        return users.stream()
+                .anyMatch(u -> u.getName().equals(username));
+    }
+
+    public boolean authenticateUser(String username, String password) {
+        return users.stream()
+                .filter(u -> u.getName().equals(username))
+                .findFirst()
+                .map(user -> BCrypt.checkpw(password, user.getPassword()))
+                .orElse(false);
     }
 }

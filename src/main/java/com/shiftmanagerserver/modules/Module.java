@@ -40,6 +40,6 @@ public class Module extends AbstractModule {
         bindConstant().annotatedWith(Names.named("solver.ip")).to(System.getenv().getOrDefault("solver.ip", "localhost"));
         bindConstant().annotatedWith(Names.named("solver.port")).to(Integer.parseInt(System.getenv().getOrDefault("solver.port", "8080")));
         bindConstant().annotatedWith(Names.named("application.port")).to(Integer.parseInt(System.getenv().getOrDefault("application.port", "8081")));
-        bindConstant().annotatedWith(Names.named("database.file")).to(Integer.parseInt(System.getenv().getOrDefault("database.file", "/resources/db.json")));
+        bindConstant().annotatedWith(Names.named("database.file")).to(System.getenv().getOrDefault("database.file", "/resources/db.json"));
     }
 }

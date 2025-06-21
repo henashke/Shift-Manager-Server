@@ -2,7 +2,6 @@ package com.shiftmanagerserver.assignment;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.shiftmanagerserver.converters.ConverterUtils;
 import com.shiftmanagerserver.dto.AssignmentReplyDTO;
 import com.shiftmanagerserver.dto.AssignmentRequestDTO;
 import com.shiftmanagerserver.entities.Shift;
@@ -16,7 +15,6 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Handles the assignment of shifts to users by communicating with the assignment service.
@@ -44,7 +42,7 @@ public class AssignmentSolver {
     public void solveAssignment(Set<Shift> shifts) {
         client.post(assignmentServicePort, assignmentServiceIp, assignmentServiceUrl)
                 .putHeader("Content-Type", "application/json")
-                .sendJsonObject(JsonObject.mapFrom(buiildAssignmentRequestDTO(shifts)), ar -> {
+                .sendJsonObject(JsonObject.mapFrom(buildAssignmentRequestDTO(shifts)), ar -> {
                     if (ar.succeeded()) {
                         handleResponse(ar.result());
                     } else {
@@ -53,14 +51,15 @@ public class AssignmentSolver {
                 });
     }
 
-    public AssignmentRequestDTO buiildAssignmentRequestDTO(Set<Shift> shifts) {
-        return new AssignmentRequestDTO(userService.users().result().stream()
-                .map(ConverterUtils::convert)
-                .collect(Collectors.toSet()),
-                shifts.stream()
-                        .map(ConverterUtils::convert)
-                        .collect(Collectors.toSet())
-        );
+    public AssignmentRequestDTO buildAssignmentRequestDTO(Set<Shift> shifts) {
+//        return new AssignmentRequestDTO(userService.users().result().stream()
+//                .map(ConverterUtils::convert)
+//                .collect(Collectors.toSet()),
+//                shifts.stream()
+//                        .map(ConverterUtils::convert)
+//                        .collect(Collectors.toSet())
+//        );
+        return null;
     }
 
     void handleResponse(HttpResponse<Buffer> response) {

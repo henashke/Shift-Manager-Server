@@ -1,0 +1,152 @@
+package com.shiftmanagerserver.handlers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shiftmanagerserver.entities.Constraint;
+import com.shiftmanagerserver.entities.Shift;
+import com.shiftmanagerserver.entities.ShiftType;
+import com.shiftmanagerserver.service.ConstraintService;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Date;
+import java.util.List;
+
+public class ConstraintHandler {
+    private static final Logger logger = LoggerFactory.getLogger(ConstraintHandler.class);
+    private final ConstraintService constraintService;
+    private final ObjectMapper objectMapper;
+
+    public ConstraintHandler(ConstraintService constraintService) {
+        this.constraintService = constraintService;
+        this.objectMapper = new ObjectMapper();
+    }
+
+    public void handleCreateConstraint(RoutingContext ctx) {
+        try {
+            String body = ctx.body().asString();
+            logger.info("Received create constraint request");
+
+            Constraint constraint = objectMapper.readValue(body, Constraint.class);
+            constraintService.createConstraint(constraint);
+
+            ctx.response()
+                    .setStatusCode(201)
+                    .putHeader("Content-Type", "application/json")
+                    .end(new JsonObject().put("message", "Constraint created successfully").encode());
+        } catch (Exception e) {
+            logger.error("Error creating constraint", e);
+            handleError(ctx, e);
+        }
+    }
+
+    public void handleGetConstraintsByKonanId(RoutingContext ctx) {
+        try {
+            String konanId = ctx.pathParam("konanId");
+            logger.info("Fetching constraints for konanId: {}", konanId);
+
+            List<Constraint> constraints = constraintService.getConstraintsByKonanId(konanId);
+            JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
+
+            ctx.response()
+                    .putHeader("Content-Type", "application/json")
+                    .end(constraintsArray.encode());
+        } catch (Exception e) {
+            logger.error("Error fetching constraints", e);
+            handleError(ctx, e);
+        }
+    }
+
+    public void handleGetAllConstraints(RoutingContext ctx) {
+        try {
+            logger.info("Fetching all constraints");
+            List<Constraint> constraints = constraintService.getAllConstraints();
+            JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
+
+            ctx.response()
+                    .putHeader("Content-Type", "application/json")
+                    .end(constraintsArray.encode());
+        } catch (Exception e) {
+            logger.error("Error fetching all constraints", e);
+            handleError(ctx, e);
+        }
+    }
+
+    public void handleDeleteConstraint(RoutingContext ctx) {
+        try {
+            JsonObject requestBody = ctx.body().asJsonObject();
+            String konanId = requestBody.getString("konanId");
+            String dateStr = requestBody.getString("date");
+            String shiftTypeStr = requestBody.getString("shiftType");
+
+            if (konanId == null || dateStr == null || shiftTypeStr == null) {
+                ctx.response()
+                    .setStatusCode(400)
+                    .putHeader("Content-Type", "application/json")
+                    .end(new JsonObject()
+                        .put("error", "Missing required fields: konanId, date, and shiftType are required")
+                        .encode());
+                return;
+            }
+
+            Date date;
+            try {
+                date = objectMapper.getDateFormat().parse(dateStr);
+            } catch (Exception e) {
+                ctx.response()
+                    .setStatusCode(400)
+                    .putHeader("Content-Type", "application/json")
+                    .end(new JsonObject()
+                        .put("error", "Invalid date format")
+                        .encode());
+                return;
+            }
+
+            ShiftType shiftType;
+            try {
+                shiftType = ShiftType.fromHebrewName(shiftTypeStr);
+            } catch (IllegalArgumentException e) {
+                ctx.response()
+                    .setStatusCode(400)
+                    .putHeader("Content-Type", "application/json")
+                    .end(new JsonObject()
+                        .put("error", "Invalid constraint type")
+                        .encode());
+                return;
+            }
+
+            boolean deleted = constraintService.deleteConstraint(konanId, new Shift(date, shiftType));
+            if (deleted) {
+                ctx.response()
+                    .setStatusCode(200)
+                    .putHeader("Content-Type", "application/json")
+                    .end(new JsonObject()
+                        .put("message", "Constraint deleted successfully")
+                        .encode());
+            } else {
+                ctx.response()
+                    .setStatusCode(404)
+                    .putHeader("Content-Type", "application/json")
+                    .end(new JsonObject()
+                        .put("error", "Constraint not found")
+                        .encode());
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting constraint", e);
+            handleError(ctx, e);
+        }
+    }
+
+    private void handleError(RoutingContext ctx, Exception e) {
+        HttpServerResponse response = ctx.response();
+        response.setStatusCode(500)
+                .putHeader("Content-Type", "application/json")
+                .end(new JsonObject()
+                        .put("error", "Internal Server Error")
+                        .put("message", e.getMessage())
+                        .encode());
+    }
+}

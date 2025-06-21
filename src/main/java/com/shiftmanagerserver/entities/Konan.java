@@ -2,28 +2,19 @@ package com.shiftmanagerserver.entities;
 
 import java.util.UUID;
 
-public class User {
-
-
-    private String password;
+public class Konan {
     private String id;
     private String name;
     private int score;
-    private String konanId;
 
-    public User() {
+    public Konan() {
         this.id = UUID.randomUUID().toString();
     }
 
-    public User(String name, int score, String konanId) {
+    public Konan(String name, int score) {
         this();
         this.name = name;
         this.score = score;
-        this.konanId = konanId;
-    }
-
-    public String konanId() {
-        return konanId;
     }
 
     public String getId() {
@@ -48,18 +39,5 @@ public class User {
 
     public void setScore(int score) {
         this.score = score;
-    }
-
-    public void setKonanId(String id) {
-        this.konanId = id;
-    }
-
-    public String getPassword() {
-
-        return password;
-    }
-
-    public void setPassword(String hashedPassword) {
-        this.password = hashedPassword;
     }
 }
