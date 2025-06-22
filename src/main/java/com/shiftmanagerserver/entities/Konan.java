@@ -1,4 +1,4 @@
-package com.shiftmanagerserver.model;
+package com.shiftmanagerserver.entities;
 
 import java.util.UUID;
 
@@ -17,7 +17,6 @@ public class Konan {
         this.score = score;
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }

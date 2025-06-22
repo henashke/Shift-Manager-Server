@@ -40,7 +40,7 @@ hs_err_pid*
 replay_pid*
 
 # Application specific
-konans.json
+users.json
 
 # OS specific files
 .DS_Store
