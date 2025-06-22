@@ -3,13 +3,13 @@ package com.shiftmanagerserver.entities;
 public class Constraint {
     private Shift shift;
     private ConstraintType constraintType;
-    private String konanId;
+    private String userId;
 
     public Constraint() {
     }
 
-    public Constraint(String konanId, Shift shift) {
-        this.konanId = konanId;
+    public Constraint(String userId, Shift shift) {
+        this.userId = userId;
         this.shift = shift;
     }
 
@@ -29,11 +29,11 @@ public class Constraint {
         this.constraintType = constraintType;
     }
 
-    public String konanId() {
-        return konanId;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setKonanId(String konanId) {
-        this.konanId = konanId;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

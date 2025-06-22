@@ -43,12 +43,12 @@ public class ConstraintHandler {
         }
     }
 
-    public void handleGetConstraintsByKonanId(RoutingContext ctx) {
+    public void handleGetConstraintsByUserId(RoutingContext ctx) {
         try {
-            String konanId = ctx.pathParam("konanId");
-            logger.info("Fetching constraints for konanId: {}", konanId);
+            String userId = ctx.pathParam("userId");
+            logger.info("Fetching constraints for userId: {}", userId);
 
-            List<Constraint> constraints = constraintService.getConstraintsByKonanId(konanId);
+            List<Constraint> constraints = constraintService.getConstraintsByUserId(userId);
             JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
 
             ctx.response()
@@ -78,17 +78,17 @@ public class ConstraintHandler {
     public void handleDeleteConstraint(RoutingContext ctx) {
         try {
             JsonObject requestBody = ctx.body().asJsonObject();
-            String konanId = requestBody.getString("konanId");
+            String userId = requestBody.getString("userId");
             String dateStr = requestBody.getString("date");
             String shiftTypeStr = requestBody.getString("shiftType");
 
-            if (konanId == null || dateStr == null || shiftTypeStr == null) {
+            if (userId == null || dateStr == null || shiftTypeStr == null) {
                 ctx.response()
-                    .setStatusCode(400)
-                    .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject()
-                        .put("error", "Missing required fields: konanId, date, and shiftType are required")
-                        .encode());
+                        .setStatusCode(400)
+                        .putHeader("Content-Type", "application/json")
+                        .end(new JsonObject()
+                                .put("error", "Missing required fields: userId, date, and shiftType are required")
+                                .encode());
                 return;
             }
 
@@ -97,11 +97,11 @@ public class ConstraintHandler {
                 date = objectMapper.getDateFormat().parse(dateStr);
             } catch (Exception e) {
                 ctx.response()
-                    .setStatusCode(400)
-                    .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject()
-                        .put("error", "Invalid date format")
-                        .encode());
+                        .setStatusCode(400)
+                        .putHeader("Content-Type", "application/json")
+                        .end(new JsonObject()
+                                .put("error", "Invalid date format")
+                                .encode());
                 return;
             }
 
@@ -110,29 +110,29 @@ public class ConstraintHandler {
                 shiftType = ShiftType.fromHebrewName(shiftTypeStr);
             } catch (IllegalArgumentException e) {
                 ctx.response()
-                    .setStatusCode(400)
-                    .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject()
-                        .put("error", "Invalid constraint type")
-                        .encode());
+                        .setStatusCode(400)
+                        .putHeader("Content-Type", "application/json")
+                        .end(new JsonObject()
+                                .put("error", "Invalid shift type")
+                                .encode());
                 return;
             }
 
-            boolean deleted = constraintService.deleteConstraint(konanId, new Shift(date, shiftType));
+            boolean deleted = constraintService.deleteConstraint(userId, new Shift(date, shiftType));
             if (deleted) {
                 ctx.response()
-                    .setStatusCode(200)
-                    .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject()
-                        .put("message", "Constraint deleted successfully")
-                        .encode());
+                        .setStatusCode(200)
+                        .putHeader("Content-Type", "application/json")
+                        .end(new JsonObject()
+                                .put("message", "Constraint deleted successfully")
+                                .encode());
             } else {
                 ctx.response()
-                    .setStatusCode(404)
-                    .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject()
-                        .put("error", "Constraint not found")
-                        .encode());
+                        .setStatusCode(404)
+                        .putHeader("Content-Type", "application/json")
+                        .end(new JsonObject()
+                                .put("error", "Constraint not found")
+                                .encode());
             }
         } catch (Exception e) {
             logger.error("Error deleting constraint", e);
