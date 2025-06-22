@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.shiftmanagerserver.entities.Konan;
 import com.shiftmanagerserver.entities.User;
+import io.vertx.core.json.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,5 +84,37 @@ public class UserService {
                 .findFirst()
                 .map(user -> BCrypt.checkpw(password, user.getPassword()))
                 .orElse(false);
+    }
+
+    public List<User> getAllUsers() {
+        return new ArrayList<>(users);
+    }
+
+    public User getUserById(String id) {
+        return users.stream()
+                .filter(u -> u.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public User updateUser(String id, JsonObject updates) {
+        User user = getUserById(id);
+        if (user == null) return null;
+        if (updates.containsKey("name")) {
+            user.setName(updates.getString("name"));
+        }
+        if (updates.containsKey("score")) {
+            user.setScore(updates.getInteger("score"));
+        }
+        saveUsers();
+        return user;
+    }
+
+    public boolean deleteUser(String id) {
+        boolean removed = users.removeIf(u -> u.getId().equals(id));
+        if (removed) {
+            saveUsers();
+        }
+        return removed;
     }
 }

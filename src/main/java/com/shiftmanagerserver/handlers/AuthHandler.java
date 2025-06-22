@@ -4,11 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shiftmanagerserver.entities.User;
 import com.shiftmanagerserver.service.UserService;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthHandler {
+public class AuthHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(AuthHandler.class);
     private final UserService userService;
     private final ObjectMapper objectMapper;
@@ -99,5 +100,11 @@ public class AuthHandler {
                 .setStatusCode(500)
                 .putHeader("content-type", "application/json")
                 .end(new JsonObject().put("error", e.getMessage()).encode());
+    }
+
+    @Override
+    public void addRoutes(Router router) {
+        router.post("/auth/signup").handler(this::handleSignup);
+        router.post("/auth/login").handler(this::handleLogin);
     }
 }

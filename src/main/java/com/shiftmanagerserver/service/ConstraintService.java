@@ -31,16 +31,16 @@ public class ConstraintService {
         return constraint;
     }
 
-    public List<Constraint> getConstraintsByKonanId(String konanId) {
+    public List<Constraint> getConstraintsByUserId(String userId) {
         return constraints.stream()
-                .filter(c -> c.konanId().equals(konanId))
+                .filter(c -> c.getUserId().equals(userId))
                 .collect(Collectors.toList());
     }
 
-    public boolean deleteConstraint(String konanId, Shift shift) {
+    public boolean deleteConstraint(String userId, Shift shift) {
         int initialSize = constraints.size();
         constraints.removeIf(c ->
-                c.konanId().equals(konanId) &&
+                c.getUserId().equals(userId) &&
                         c.getShift().equals(shift)
         );
         boolean removed = constraints.size() < initialSize;
