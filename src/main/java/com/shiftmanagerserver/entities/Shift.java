@@ -11,6 +11,10 @@ public class Shift {
     public Shift() {
     }
 
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
     public Shift(Date date, ShiftType type) {
         this.date = date;
         this.type = type;

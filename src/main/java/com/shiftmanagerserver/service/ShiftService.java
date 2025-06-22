@@ -2,7 +2,7 @@ package com.shiftmanagerserver.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shiftmanagerserver.entities.Shift;
+import com.shiftmanagerserver.entities.AssignedShift;
 import com.shiftmanagerserver.entities.ShiftType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,12 +12,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 public class ShiftService {
     private static final Logger logger = LoggerFactory.getLogger(ShiftService.class);
     private static final String SHIFTS_FILE = "shifts.json";
     private final ObjectMapper objectMapper;
-    private List<Shift> shifts;
+    private List<AssignedShift> shifts;
 
     public ShiftService() {
         this.objectMapper = new ObjectMapper();
@@ -29,12 +30,14 @@ public class ShiftService {
         File file = new File(SHIFTS_FILE);
         if (file.exists()) {
             try {
-                shifts = objectMapper.readValue(file, new TypeReference<>() {
+                shifts = objectMapper.readValue(file, new TypeReference<List<AssignedShift>>() {
                 });
             } catch (IOException e) {
                 logger.error("Error loading shifts from file", e);
                 shifts = new ArrayList<>();
             }
+        } else {
+            shifts = new ArrayList<>();
         }
     }
 
@@ -46,12 +49,25 @@ public class ShiftService {
         }
     }
 
-    public List<Shift> getAllShifts() {
+    public List<AssignedShift> getAllShifts() {
         return new ArrayList<>(shifts);
     }
 
-    public void addShift(Shift shift) {
+    public void addShift(AssignedShift shift) {
+        if (shift.uuid() == null) {
+            shift.setUuid(UUID.randomUUID());
+        }
         shifts.add(shift);
+        saveShifts();
+    }
+
+    public void addShifts(List<AssignedShift> newShifts) {
+        for (AssignedShift shift : newShifts) {
+            if (shift.uuid() == null) {
+                shift.setUuid(UUID.randomUUID());
+            }
+            shifts.add(shift);
+        }
         saveShifts();
     }
 
