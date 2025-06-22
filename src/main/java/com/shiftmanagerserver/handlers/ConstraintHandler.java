@@ -63,7 +63,6 @@ public class ConstraintHandler implements Handler {
 
     public void handleGetAllConstraints(RoutingContext ctx) {
         try {
-            logger.info("Fetching all constraints");
             List<Constraint> constraints = constraintService.getAllConstraints();
             JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
 

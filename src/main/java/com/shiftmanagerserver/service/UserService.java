@@ -2,7 +2,6 @@ package com.shiftmanagerserver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
-import com.shiftmanagerserver.entities.Konan;
 import com.shiftmanagerserver.entities.User;
 import io.vertx.core.json.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
@@ -19,12 +18,10 @@ public class UserService {
     private static final String USERS_FILE = "users.json";
     private final ObjectMapper objectMapper;
     private final List<User> users;
-    private final KonanService konanService;
 
     public UserService() {
         this.objectMapper = new ObjectMapper();
         this.users = loadUsers();
-        this.konanService = new KonanService();
     }
 
     private List<User> loadUsers() {
@@ -61,13 +58,9 @@ public class UserService {
             return false;
         }
 
-        Konan konan = new Konan(user.getId(), konanService.getAverageKonanScore());
-        konanService.createKonan(konan);
-
-        user.setKonanId(konan.getId());
-
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashedPassword);
+        user.setScore(this.getAverageUserScore());
         users.add(user);
         saveUsers();
         return true;
@@ -116,5 +109,15 @@ public class UserService {
             saveUsers();
         }
         return removed;
+    }
+
+    public int getAverageUserScore() {
+        if (users.isEmpty()) {
+            return 0;
+        }
+        return (int) Math.round(users.stream()
+                .mapToInt(User::getScore)
+                .average()
+                .orElse(0));
     }
 }
