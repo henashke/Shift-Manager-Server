@@ -5,13 +5,14 @@ import com.shiftmanagerserver.entities.User;
 import com.shiftmanagerserver.service.UserService;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class UserHandler {
+public class UserHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(UserHandler.class);
     private final UserService userService;
     private final ObjectMapper objectMapper;
@@ -97,5 +98,13 @@ public class UserHandler {
             ctx.response().setStatusCode(500).end();
         }
     }
-}
 
+    @Override
+    public void addRoutes(Router router) {
+        router.get("/users").handler(this::getAllUsers);
+        router.get("/users/:id").handler(this::getUserById);
+        router.post("/users").handler(this::createUser);
+        router.put("/users/:id").handler(this::updateUser);
+        router.delete("/users/:id").handler(this::deleteUser);
+    }
+}

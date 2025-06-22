@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.shiftmanagerserver.handlers.AuthHandler;
 import com.shiftmanagerserver.handlers.ConstraintHandler;
+import com.shiftmanagerserver.handlers.ShiftHandler;
 import com.shiftmanagerserver.handlers.UserHandler;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -18,14 +19,16 @@ public class MainVerticle extends AbstractVerticle {
     private final Router router;
     private final ConstraintHandler constraintHandler;
     private final AuthHandler authHandler;
+    private final ShiftHandler shiftHandler;
 
     @Inject
     public MainVerticle(@Named("application.port") Integer port, Router router,
-                        UserHandler userHandler, AuthHandler authHandler, ConstraintHandler constraintHandler) {
+                        UserHandler userHandler, AuthHandler authHandler, ConstraintHandler constraintHandler, ShiftHandler shiftHandler) {
         this.port = port;
         this.userHandler = userHandler;
         this.authHandler = authHandler;
         this.constraintHandler = constraintHandler;
+        this.shiftHandler = shiftHandler;
         this.router = router;
         this.logger = LoggerFactory.getLogger(MainVerticle.class);
     }
@@ -48,21 +51,10 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void bindRoutes(Router router) {
-
-        router.post("/auth/signup").handler(authHandler::handleSignup);
-        router.post("/auth/login").handler(authHandler::handleLogin);
-
-        // User routes
-        router.get("/users").handler(userHandler::getAllUsers);
-        router.get("/users/:id").handler(userHandler::getUserById);
-        router.post("/users").handler(userHandler::createUser);
-        router.put("/users/:id").handler(userHandler::updateUser);
-        router.delete("/users/:id").handler(userHandler::deleteUser);
-
-        router.post("/constraints").handler(constraintHandler::handleCreateConstraint);
-        router.get("/constraints").handler(constraintHandler::handleGetAllConstraints);
-        router.get("/constraints/user/:userId").handler(constraintHandler::handleGetConstraintsByUserId);
-        router.delete("/constraints").handler(constraintHandler::handleDeleteConstraint);
+        authHandler.addRoutes(router);
+        userHandler.addRoutes(router);
+        constraintHandler.addRoutes(router);
+        shiftHandler.addRoutes(router);
     }
 
 }

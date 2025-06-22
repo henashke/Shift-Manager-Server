@@ -8,6 +8,7 @@ import com.shiftmanagerserver.service.ConstraintService;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.List;
 
-public class ConstraintHandler {
+public class ConstraintHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(ConstraintHandler.class);
     private final ConstraintService constraintService;
     private final ObjectMapper objectMapper;
@@ -148,5 +149,13 @@ public class ConstraintHandler {
                         .put("error", "Internal Server Error")
                         .put("message", e.getMessage())
                         .encode());
+    }
+
+    @Override
+    public void addRoutes(Router router) {
+        router.post("/constraints").handler(this::handleCreateConstraint);
+        router.get("/constraints").handler(this::handleGetAllConstraints);
+        router.get("/constraints/user/:userId").handler(this::handleGetConstraintsByUserId);
+        router.delete("/constraints").handler(this::handleDeleteConstraint);
     }
 }
