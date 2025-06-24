@@ -54,6 +54,12 @@ public class ConstraintService {
         return new ArrayList<>(constraints);
     }
 
+    public List<Constraint> addConstraints(List<Constraint> newConstraints) {
+        constraints.addAll(newConstraints);
+        saveConstraints();
+        return newConstraints;
+    }
+
     private void loadConstraints() {
         File file = new File(CONSTRAINTS_FILE);
         if (file.exists()) {

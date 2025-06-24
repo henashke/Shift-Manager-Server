@@ -43,7 +43,7 @@ public class Shift {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null) return false;
         Shift shift = (Shift) o;
         if (type != shift.type) return false;
         if (date == null || shift.date == null) return false;

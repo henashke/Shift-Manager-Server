@@ -29,15 +29,16 @@ public class ConstraintHandler implements Handler {
     public void handleCreateConstraint(RoutingContext ctx) {
         try {
             String body = ctx.body().asString();
-            logger.info("Received create constraint request");
+            logger.info("Received create constraints request");
 
-            Constraint constraint = objectMapper.readValue(body, Constraint.class);
-            constraintService.createConstraint(constraint);
+            // Try to parse as a list first
+            List<Constraint> constraints = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, Constraint.class));
+            constraintService.addConstraints(constraints);
 
             ctx.response()
                     .setStatusCode(201)
                     .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject().put("message", "Constraint created successfully").encode());
+                    .end(new JsonObject().put("message", "Constraint(s) created successfully").encode());
         } catch (Exception e) {
             logger.error("Error creating constraint", e);
             handleError(ctx, e);
