@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 public class ShiftService {
     private static final Logger logger = LoggerFactory.getLogger(ShiftService.class);
@@ -53,7 +56,7 @@ public class ShiftService {
 
     public void addShifts(List<AssignedShift> newShifts) {
         for (AssignedShift shift : newShifts) {
-            shifts.removeIf(s -> Objects.equals(s, shift));
+            shifts.removeIf(s -> s.equals(shift));
             shift.setUuid(UUID.randomUUID());
             shifts.add(shift);
         }
@@ -62,7 +65,7 @@ public class ShiftService {
 
     public boolean deleteShift(Date date, ShiftType type) {
         int initialSize = shifts.size();
-        shifts.removeIf(s -> Objects.equals(s, new Shift(date, type)));
+        shifts.removeIf(s -> s.equals(new Shift(date, type)));
         boolean removed = shifts.size() < initialSize;
         if (removed) saveShifts();
         return removed;
