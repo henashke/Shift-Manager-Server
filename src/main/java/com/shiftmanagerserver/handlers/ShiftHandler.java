@@ -91,28 +91,23 @@ public class ShiftHandler implements Handler {
             int userIndex = 0;
 
             for (ShiftWeight shiftWeight : shiftsWeight) {
-                // get back to first user when assigned a shift for all users
                 if (userIndex >= users.size()) {
-                    users.sort(Comparator.comparingInt(User::getScore)); // resort after scores changed
+                    users.sort(Comparator.comparingInt(User::getScore));
                     userIndex = 0;
                 }
 
                 User user = users.get(userIndex);
                 userIndex++;
 
-                // Assign the shift
                 Shift shift = new Shift(generateDateFromDay(shiftWeight.getDay()), shiftWeight.getShiftType());
                 AssignedShift assignedShift = new AssignedShift(user.getId(), shift);
                 assignedShifts.add(assignedShift);
 
-                // Update user's score
                 user.setScore(user.getScore() + shiftWeight.getWeight());
             }
 
-            // Save assigned shifts
             shiftService.addShifts(assignedShifts);
 
-            //updated user scores
             for (User user : users) {
                 JsonObject updates = new JsonObject().put("score", user.getScore());
                 userService.updateUser(user.getId(), updates);
