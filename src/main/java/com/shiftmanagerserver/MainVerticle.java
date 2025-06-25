@@ -2,10 +2,7 @@ package com.shiftmanagerserver;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.shiftmanagerserver.handlers.AuthHandler;
-import com.shiftmanagerserver.handlers.ConstraintHandler;
-import com.shiftmanagerserver.handlers.ShiftHandler;
-import com.shiftmanagerserver.handlers.UserHandler;
+import com.shiftmanagerserver.handlers.*;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
@@ -20,15 +17,17 @@ public class MainVerticle extends AbstractVerticle {
     private final ConstraintHandler constraintHandler;
     private final AuthHandler authHandler;
     private final ShiftHandler shiftHandler;
+    private final ShiftWeightSettingsHandler shiftWeightSettingsHandler;
 
     @Inject
     public MainVerticle(@Named("application.port") Integer port, Router router,
-                        UserHandler userHandler, AuthHandler authHandler, ConstraintHandler constraintHandler, ShiftHandler shiftHandler) {
+                        UserHandler userHandler, AuthHandler authHandler, ConstraintHandler constraintHandler, ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
         this.port = port;
         this.userHandler = userHandler;
         this.authHandler = authHandler;
         this.constraintHandler = constraintHandler;
         this.shiftHandler = shiftHandler;
+        this.shiftWeightSettingsHandler = shiftWeightSettingsHandler;
         this.router = router;
         this.logger = LoggerFactory.getLogger(MainVerticle.class);
     }
@@ -55,6 +54,7 @@ public class MainVerticle extends AbstractVerticle {
         userHandler.addRoutes(router);
         constraintHandler.addRoutes(router);
         shiftHandler.addRoutes(router);
+        shiftWeightSettingsHandler.addRoutes(router);
     }
 
 }
