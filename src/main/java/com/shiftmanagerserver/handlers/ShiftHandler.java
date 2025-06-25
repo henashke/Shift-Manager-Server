@@ -19,9 +19,7 @@ import java.util.*;
 public class ShiftHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(ShiftHandler.class);
     private final ShiftService shiftService;
-
     private final UserService userService;
-
     private final ShiftWeightSettingsService shiftWeightSettingsService;
     private final ObjectMapper objectMapper;
 
