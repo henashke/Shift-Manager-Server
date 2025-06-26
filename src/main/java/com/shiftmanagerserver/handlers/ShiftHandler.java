@@ -2,6 +2,7 @@ package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shiftmanagerserver.entities.*;
+import com.shiftmanagerserver.service.ConstraintService;
 import com.shiftmanagerserver.service.ShiftService;
 import com.shiftmanagerserver.service.ShiftWeightSettingsService;
 import com.shiftmanagerserver.service.UserService;
@@ -20,6 +21,7 @@ public class ShiftHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(ShiftHandler.class);
     private final ShiftService shiftService;
     private final UserService userService;
+    private final ConstraintService constraintService;
     private final ShiftWeightSettingsService shiftWeightSettingsService;
     private final ObjectMapper objectMapper;
 
@@ -28,6 +30,7 @@ public class ShiftHandler implements Handler {
         this.objectMapper = new ObjectMapper();
         this.userService = new UserService();
         this.shiftWeightSettingsService = new ShiftWeightSettingsService();
+        this.constraintService = new ConstraintService();
     }
 
     public void getAllShifts(RoutingContext ctx) {
@@ -77,31 +80,77 @@ public class ShiftHandler implements Handler {
 
     public void setShifts(RoutingContext ctx) {
         try {
-            ShiftWeightSettings settings = shiftWeightSettingsService.getSettings();
+            String body = ctx.body().asString();
+
+            List<User> users = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, User.class));
+            ShiftWeightSettings settings = objectMapper.readValue(body, ShiftWeightSettings.class);
+            List<Constraint> constraints = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, Constraint.class));
+
+            constraintService.addConstraints(constraints);
             String currentPreset = settings.getCurrentPreset();
-            List<ShiftWeight> shiftsWeight= settings.getPresets().get(currentPreset).getWeights();
-            List<User> users = userService.getAllUsers();
+            List<ShiftWeight> shiftsWeight = settings.getPresets().get(currentPreset).getWeights();
 
             shiftsWeight.sort((a, b) -> Integer.compare(b.getWeight(), a.getWeight()));
             users.sort(Comparator.comparingInt(User::getScore));
 
             List<AssignedShift> assignedShifts = new ArrayList<>();
-            int userIndex = 0;
+            Map<String, List<Shift>> userShifts = new HashMap<>();
+            Map<String, Integer> userMissedDays = new HashMap<>();
+
+            for (User user : users) {
+                userShifts.put(user.getId(), new ArrayList<>());
+                userMissedDays.put(user.getId(), 0);
+            }
 
             for (ShiftWeight shiftWeight : shiftsWeight) {
-                if (userIndex >= users.size()) {
-                    users.sort(Comparator.comparingInt(User::getScore));
-                    userIndex = 0;
+                Shift newShift = new Shift(generateDateFromDay(shiftWeight.getDay()), shiftWeight.getShiftType());
+
+                boolean assigned = false;
+
+                users.sort(Comparator.comparingInt(User::getScore));
+
+                for (User user : users) {
+                    String userId = user.getId();
+                    List<Shift> pastShifts = userShifts.get(userId);
+                    int currentMissed = userMissedDays.get(userId);
+
+                    boolean blocked = constraints.stream().anyMatch(c ->
+                            c.getUserId().equals(userId) &&
+                                    c.getShift().getType() == newShift.getType() &&
+                                    isSameDay(c.getShift().getDate(), newShift.getDate()) &&
+                                    c.getConstraintType() == ConstraintType.CANT
+                    );
+
+                    if (blocked)
+                        continue;
+
+                    // Enforce 48 gap between shifts
+                    boolean has48hGap = pastShifts.stream().allMatch(s ->
+                            Math.abs(s.getDate().getTime() - newShift.getDate().getTime()) >= 48L * 60 * 60 * 1000
+                    );
+
+                    if (!has48hGap)
+                        continue;
+
+                    // Enforce max 2 missed office days
+                    int missedDaysForShift = calculateMissedDays(shiftWeight.getDay(), shiftWeight.getShiftType());
+                    if ((currentMissed + missedDaysForShift) > 2)
+                        continue;
+
+                    AssignedShift assignedShift = new AssignedShift(userId, newShift);
+                    assignedShifts.add(assignedShift);
+                    user.setScore(user.getScore() + shiftWeight.getWeight());
+
+                    pastShifts.add(newShift);
+                    userMissedDays.put(userId, currentMissed + missedDaysForShift);
+
+                    assigned = true;
+                    break;
                 }
 
-                User user = users.get(userIndex);
-                userIndex++;
-
-                Shift shift = new Shift(generateDateFromDay(shiftWeight.getDay()), shiftWeight.getShiftType());
-                AssignedShift assignedShift = new AssignedShift(user.getId(), shift);
-                assignedShifts.add(assignedShift);
-
-                user.setScore(user.getScore() + shiftWeight.getWeight());
+                if (!assigned) {
+                    logger.warn("No suitable user found for shift: " + newShift.getDate() + " " + newShift.getType());
+                }
             }
 
             shiftService.addShifts(assignedShifts);
@@ -120,6 +169,30 @@ public class ShiftHandler implements Handler {
             ctx.response().setStatusCode(500).end("Error assigning shifts");
         }
     }
+
+    private int calculateMissedDays(Day day, ShiftType type) {
+        switch (day) {
+            case SUNDAY:
+            case TUESDAY:
+                return 1;
+            case MONDAY:
+            case WEDNESDAY:
+                if (type == ShiftType.NIGHT) return 2;
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    private boolean isSameDay(Date d1, Date d2) {
+        Calendar cal1 = Calendar.getInstance();
+        cal1.setTime(d1);
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(d2);
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)
+                && cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+    }
+
 
     private Date generateDateFromDay(Day day) {
         LocalDate now = LocalDate.now();
