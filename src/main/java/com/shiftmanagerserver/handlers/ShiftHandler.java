@@ -133,9 +133,12 @@ public class ShiftHandler implements Handler {
                         continue;
 
                     // Enforce max 2 missed office days
-                    int missedDaysForShift = calculateMissedDays(shiftWeight.getDay(), shiftWeight.getShiftType());
-                    if ((currentMissed + missedDaysForShift) > 2)
-                        continue;
+                    int missedDaysForShift = 0;
+                    if (ShiftWeightPresetType.IMMEDIATE.name().equals(currentPreset)) {
+                        missedDaysForShift = calculateMissedDays(shiftWeight.getDay(), shiftWeight.getShiftType());
+                        if ((currentMissed + missedDaysForShift) > 2)
+                            continue;
+                    }
 
                     AssignedShift assignedShift = new AssignedShift(userId, newShift);
                     assignedShifts.add(assignedShift);
