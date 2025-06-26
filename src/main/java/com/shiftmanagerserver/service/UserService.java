@@ -85,7 +85,7 @@ public class UserService {
 
     public User getUserById(String id) {
         return users.stream()
-                .filter(u -> u.getId().equals(id))
+                .filter(u -> u.getName().equals(id))
                 .findFirst()
                 .orElse(null);
     }
@@ -104,7 +104,7 @@ public class UserService {
     }
 
     public boolean deleteUser(String id) {
-        boolean removed = users.removeIf(u -> u.getId().equals(id));
+        boolean removed = users.removeIf(u -> u.getName().equals(id));
         if (removed) {
             saveUsers();
         }
