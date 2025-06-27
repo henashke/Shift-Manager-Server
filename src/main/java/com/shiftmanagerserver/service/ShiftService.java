@@ -19,11 +19,13 @@ public class ShiftService {
     private static final Logger logger = LoggerFactory.getLogger(ShiftService.class);
     private static final String SHIFTS_FILE = "shifts.json";
     private final ObjectMapper objectMapper;
+    private final ShiftWeightSettingsService shiftWeightSettingsService;
     private List<AssignedShift> shifts;
 
     public ShiftService() {
         this.objectMapper = new ObjectMapper();
         this.shifts = new ArrayList<>();
+        this.shiftWeightSettingsService = new ShiftWeightSettingsService();
         loadShifts();
     }
 

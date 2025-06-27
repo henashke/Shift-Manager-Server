@@ -78,131 +78,61 @@ public class ShiftHandler implements Handler {
         }
     }
 
-    public void setShifts(RoutingContext ctx) {
+    public void suggestShiftAssignment(RoutingContext ctx) {
         try {
-            String body = ctx.body().asString();
-
-            List<User> users = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, User.class));
-            ShiftWeightSettings settings = objectMapper.readValue(body, ShiftWeightSettings.class);
-            List<Constraint> constraints = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, Constraint.class));
-
-            constraintService.addConstraints(constraints);
-            String currentPreset = settings.getCurrentPreset();
-            List<ShiftWeight> shiftsWeight = settings.getPresets().get(currentPreset).getWeights();
-
-            shiftsWeight.sort((a, b) -> Integer.compare(b.getWeight(), a.getWeight()));
-            users.sort(Comparator.comparingInt(User::getScore));
-
-            List<AssignedShift> assignedShifts = new ArrayList<>();
-            Map<String, List<Shift>> userShifts = new HashMap<>();
-            Map<String, Integer> userMissedDays = new HashMap<>();
-
-            for (User user : users) {
-                userShifts.put(user.getId(), new ArrayList<>());
-                userMissedDays.put(user.getId(), 0);
+            JsonObject body = ctx.body().asJsonObject();
+            List<String> userIds = body.getJsonArray("userIds").getList();
+            String startDateStr = body.getString("startDate");
+            String endDateStr = body.getString("endDate");
+            if (userIds == null || startDateStr == null || endDateStr == null) {
+                ctx.response().setStatusCode(400).end();
+                return;
             }
+            Date startDate = objectMapper.getDateFormat().parse(startDateStr);
+            Date endDate = objectMapper.getDateFormat().parse(endDateStr);
+            List<Shift> relevantShifts = generateShiftsBetween(startDate, endDate);
 
-            for (ShiftWeight shiftWeight : shiftsWeight) {
-                Shift newShift = new Shift(generateDateFromDay(shiftWeight.getDay()), shiftWeight.getShiftType());
-
-                boolean assigned = false;
-
-                users.sort(Comparator.comparingInt(User::getScore));
-
-                for (User user : users) {
-                    String userId = user.getId();
-                    List<Shift> pastShifts = userShifts.get(userId);
-                    int currentMissed = userMissedDays.get(userId);
-
-                    boolean blocked = constraints.stream().anyMatch(c ->
-                            c.getUserId().equals(userId) &&
-                                    c.getShift().getType() == newShift.getType() &&
-                                    isSameDay(c.getShift().getDate(), newShift.getDate()) &&
-                                    c.getConstraintType() == ConstraintType.CANT
-                    );
-
-                    if (blocked)
-                        continue;
-
-                    // Enforce 48 gap between shifts
-                    boolean has48hGap = pastShifts.stream().allMatch(s ->
-                            Math.abs(s.getDate().getTime() - newShift.getDate().getTime()) >= 48L * 60 * 60 * 1000
-                    );
-
-                    if (!has48hGap)
-                        continue;
-
-                    // Enforce max 2 missed office days
-                    int missedDaysForShift = 0;
-                    if (ShiftWeightPresetType.IMMEDIATE.name().equals(currentPreset)) {
-                        missedDaysForShift = calculateMissedDays(shiftWeight.getDay(), shiftWeight.getShiftType());
-                        if ((currentMissed + missedDaysForShift) > 2)
-                            continue;
-                    }
-
-                    AssignedShift assignedShift = new AssignedShift(userId, newShift);
-                    assignedShifts.add(assignedShift);
-                    user.setScore(user.getScore() + shiftWeight.getWeight());
-
-                    pastShifts.add(newShift);
-                    userMissedDays.put(userId, currentMissed + missedDaysForShift);
-
-                    assigned = true;
-                    break;
-                }
-
-                if (!assigned) {
-                    logger.warn("No suitable user found for shift: " + newShift.getDate() + " " + newShift.getType());
-                }
+            UserService userService = new UserService();
+            ConstraintService constraintService = new ConstraintService();
+            Map<User, List<Constraint>> userConstraintMap = new HashMap<>();
+            for (String userId : userIds) {
+                User user = userService.getUserById(userId);
+                List<Constraint> constraints = constraintService.getConstraintsByUserId(userId);
+                userConstraintMap.put(user, constraints);
             }
-
-            shiftService.addShifts(assignedShifts);
-
-            for (User user : users) {
-                JsonObject updates = new JsonObject().put("score", user.getScore());
-                userService.updateUser(user.getId(), updates);
-            }
-
-            ctx.response()
-                    .putHeader("Content-Type", "application/json")
-                    .setStatusCode(200).end();
-
+            List<AssignedShift> suggestedShifts = shiftService.suggestShiftAssignment(relevantShifts, userConstraintMap);
+            ctx.response().setStatusCode(200).end();
         } catch (Exception e) {
-            e.printStackTrace();
-            ctx.response().setStatusCode(500).end("Error assigning shifts");
+            logger.error("Error in suggestShiftAssignment", e);
+            ctx.response().setStatusCode(400).end();
         }
     }
 
-    private int calculateMissedDays(Day day, ShiftType type) {
-        switch (day) {
-            case SUNDAY:
-            case TUESDAY:
-                return 1;
-            case MONDAY:
-            case WEDNESDAY:
-                if (type == ShiftType.NIGHT) return 2;
-                return 1;
-            default:
-                return 0;
+    public List<Shift> generateShiftsBetween(Date startDate, Date endDate) {
+        List<Shift> shifts = new ArrayList<>();
+
+        Calendar current = Calendar.getInstance();
+        current.setTime(startDate);
+
+        Calendar end = Calendar.getInstance();
+        end.setTime(endDate);
+        end.set(Calendar.HOUR_OF_DAY, 0);
+        end.set(Calendar.MINUTE, 0);
+        end.set(Calendar.SECOND, 0);
+        end.set(Calendar.MILLISECOND, 0);
+
+        while (!current.after(end)) {
+            Date shiftDate = current.getTime();
+
+            // Generate DAY and NIGHT shifts for this date
+            shifts.add(new Shift(shiftDate, ShiftType.DAY));
+            shifts.add(new Shift(shiftDate, ShiftType.NIGHT));
+
+            // Move to next day
+            current.add(Calendar.DAY_OF_MONTH, 1);
         }
-    }
 
-    private boolean isSameDay(Date d1, Date d2) {
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTime(d1);
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTime(d2);
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)
-                && cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
-    }
-
-
-    private Date generateDateFromDay(Day day) {
-        LocalDate now = LocalDate.now();
-        DayOfWeek target = DayOfWeek.valueOf(day.name());
-        int daysToAdd = (target.getValue() - now.getDayOfWeek().getValue() + 7) % 7;
-        LocalDate nextDate = now.plusDays(daysToAdd);
-        return Date.from(nextDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return shifts;
     }
 
     @Override
@@ -210,6 +140,6 @@ public class ShiftHandler implements Handler {
         router.get("/shifts").handler(this::getAllShifts);
         router.post("/shifts").handler(this::addShifts);
         router.delete("/shifts").handler(this::deleteShift);
-        router.post("/set-shifts").handler(this::setShifts);
+        router.post("/shifts/suggest-assignment").handler(this::suggestShiftAssignment);
     }
 }
