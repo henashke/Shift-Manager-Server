@@ -31,7 +31,7 @@ public class ConverterUtils {
         Set<ShiftPreferenceDTO> preferences = constraints.stream()
                 .map(ConverterUtils::convert)
                 .collect(Collectors.toSet());
-        return new UserDTO(UUID.fromString(user.getId()),
+        return new UserDTO(UUID.fromString(user.getName()),
                 preferences);
     }
 
